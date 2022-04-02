@@ -4,6 +4,7 @@
 
 #ifndef DFAV2_TRANSITIONDFA_H
 #define DFAV2_TRANSITIONDFA_H
+
 class State;
 
 class TransitionDFA {
@@ -24,6 +25,8 @@ public:
     void setInput(char input);
 
     TransitionDFA();
+
+    TransitionDFA(State *from, State *to, char input);
 
     virtual ~TransitionDFA();
 };

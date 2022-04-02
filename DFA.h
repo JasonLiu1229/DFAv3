@@ -31,7 +31,7 @@ class DFA {
     State* startState;
 
     // all states
-    set<State*> states;
+    vector<State*> states;
 
     // all transitions
     vector<TransitionDFA*> transitions;
@@ -53,9 +53,9 @@ public:
 
     void setStartState(State *startState);
 
-    const set<State *> &getStates() const;
+    const vector<State *> &getStates() const;
 
-    void setStates(const set<State *> &states);
+    void setStates(const vector<State *> &states);
 
     const vector<TransitionDFA *> &getTransitions() const;
 
@@ -63,11 +63,19 @@ public:
 
     const string &getType() const;
 
-    DFA(DFA dfa1, DFA dfa2, bool UD);
+    DFA(DFA &dfa1, DFA &dfa2, bool UD);
 
     virtual ~DFA();
 
     void print();
+
+    State* retrieveState(const string &name);
+
+    void RecursionStateFinderPU(State* state, DFA &dfa1, DFA &dfa2);
+
+    void RecursionStateFinderPD(State* state, DFA &dfa1, DFA &dfa2);
+
+    void reformatNamesP();
 };
 
 

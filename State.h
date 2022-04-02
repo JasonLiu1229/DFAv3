@@ -11,9 +11,11 @@ using namespace std;
 
 class State {
     string name;
-    bool final = false;
-    bool start = false;
+    bool start;
+    bool final;
 public:
+    State(const string &name, bool final, bool start);
+
     const string &getName() const;
 
     void setName(const string &name);
@@ -27,8 +29,6 @@ public:
     void setStart(bool start);
 
     State();
-
-    State(const string &name, bool final, bool start);
 
     virtual ~State();
 };

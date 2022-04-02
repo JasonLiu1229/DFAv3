@@ -31,3 +31,5 @@ void TransitionDFA::setInput(char input) {
 TransitionDFA::TransitionDFA() {}
 
 TransitionDFA::~TransitionDFA() {}
+
+TransitionDFA::TransitionDFA(State *from, State *to, char input) : from(from), to(to), input(input) {}
