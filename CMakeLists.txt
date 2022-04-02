@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.20)
+project(DFAv3)
+
+set(CMAKE_CXX_STANDARD 14)
+add_compile_options(-fexceptions)
+
+set(json
+        json.hpp)
+
+set(DFA
+        DFA.cpp DFA.h
+        State.cpp State.h
+        TransitionDFA.cpp TransitionDFA.h DFA.cpp DFA.h)
+
+
+add_executable(DFA_test DFA_test.cpp ${DFA} ${json})
