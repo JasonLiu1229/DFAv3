@@ -39,6 +39,9 @@ DFA::DFA(const string &filename) : filename(filename) {
                                               s1);
         transitions.push_back(trans);
     }
+
+    createTable();
+
 }
 
 const string &DFA::getFilename() const {
@@ -267,7 +270,7 @@ void DFA::RecursionStateFinderPU(State *state, DFA &dfa1, DFA &dfa2) {
         // Complete new state
         newState->setName(newName);
         if (final1 or final2){
-            newState->setFinal(final1);
+            newState->setFinal(true);
         }
 
         // Check if state exist
@@ -317,4 +320,62 @@ const set<string> &DFA::getAlphabet() const {
 
 void DFA::setAlphabet(const set<string> &alphabet) {
     DFA::alphabet = alphabet;
+}
+
+
+DFA DFA::minimize() {
+    DFA newDFA;
+
+    newDFA.alphabet = alphabet;
+
+    // check for reachable states
+    auto* newStartState = new State();
+    newStartState->setName(startState->getName());
+    newStartState->setStart(true);
+    newStartState->setFinal(startState->isFinal());
+
+    newDFA.setStartState(newStartState);
+    newDFA.states.push_back(newStartState);
+
+    recursionCheckReachable(newDFA, newDFA.getStartState());
+
+    // create table
+    newDFA.createTable();
+
+    // mark final states
+    // minimize
+
+    return newDFA;
+}
+
+DFA::DFA() {}
+
+void DFA::recursionCheckReachable(DFA &dfa, State* state) {
+    for (auto alpha : dfa.alphabet) {
+        for (auto trans : transitions){
+            if (trans->getFrom()->getName() == state->getName() and trans->getInput() == alpha){
+                auto* newState = new State(trans->getTo()->getName(), trans->getTo()->isFinal(), trans->getTo()->isStart());
+                dfa.states.push_back(newState);
+                recursionCheckReachable(dfa, newState);
+            }
+        }
+    }
+}
+
+void DFA::createTable() {
+    for (auto state1 : states){
+        for (auto state2 : states){
+            set<State*> koppel;
+            koppel.insert(state1);
+            koppel.insert(state2);
+
+            if (koppel.size() != 1 and !koppel.empty()){
+                table[koppel] = "-";
+            }
+        }
+    }
+}
+
+void DFA::recursionTFA(int totalMarked) {
+
 }

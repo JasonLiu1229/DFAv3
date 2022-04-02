@@ -38,6 +38,9 @@ class DFA {
 
     // type
     const string type = "DFA";
+
+    // table
+    map<set<State*>, string> table;
 public:
     DFA(const string &filename);
 
@@ -76,6 +79,18 @@ public:
     void RecursionStateFinderPD(State* state, DFA &dfa1, DFA &dfa2);
 
     void reformatNamesP();
+
+    DFA minimize();
+
+    DFA();
+
+    void printTable();
+
+    void recursionCheckReachable(DFA &dfa, State* state);
+
+    void createTable();
+
+    void recursionTFA(int totalMarked);
 };
 
 
