@@ -25,7 +25,7 @@ class DFA {
     string filename;
 
     // alphabet
-    set<char> alphabet;
+    set<string> alphabet;
 
     // start state
     State* startState;
@@ -45,15 +45,15 @@ public:
 
     void setFilename(const string &filename);
 
-    const set<char> &getAlphabet() const;
-
-    void setAlphabet(const set<char> &alphabet);
-
     State *getStartState() const;
 
     void setStartState(State *startState);
 
     const vector<State *> &getStates() const;
+
+    const set<string> &getAlphabet() const;
+
+    void setAlphabet(const set<string> &alphabet);
 
     void setStates(const vector<State *> &states);
 

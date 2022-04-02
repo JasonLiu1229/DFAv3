@@ -28,7 +28,10 @@ void State::setStart(bool start) {
     State::start = start;
 }
 
-State::State() {}
+State::State() {
+    final = false;
+    start = false;
+}
 
 State::~State() {}
 

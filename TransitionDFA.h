@@ -4,13 +4,15 @@
 
 #ifndef DFAV2_TRANSITIONDFA_H
 #define DFAV2_TRANSITIONDFA_H
+#include <string>
+using namespace std;
 
 class State;
 
 class TransitionDFA {
     State* from;
     State* to;
-    char input;
+    string input;
 public:
     State *getFrom() const;
 
@@ -20,13 +22,13 @@ public:
 
     void setTo(State *to);
 
-    char getInput() const;
+    const string &getInput() const;
 
-    void setInput(char input);
+    void setInput(const string &input);
 
     TransitionDFA();
 
-    TransitionDFA(State *from, State *to, char input);
+    TransitionDFA(State *from, State *to, string input);
 
     virtual ~TransitionDFA();
 };

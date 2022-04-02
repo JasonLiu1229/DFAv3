@@ -20,16 +20,16 @@ void TransitionDFA::setTo(State *to) {
     TransitionDFA::to = to;
 }
 
-char TransitionDFA::getInput() const {
-    return input;
-}
-
-void TransitionDFA::setInput(char input) {
-    TransitionDFA::input = input;
-}
-
 TransitionDFA::TransitionDFA() {}
 
 TransitionDFA::~TransitionDFA() {}
 
-TransitionDFA::TransitionDFA(State *from, State *to, char input) : from(from), to(to), input(input) {}
+TransitionDFA::TransitionDFA(State *from, State *to, string input) : from(from), to(to), input(input) {}
+
+const string &TransitionDFA::getInput() const {
+    return input;
+}
+
+void TransitionDFA::setInput(const string &input) {
+    TransitionDFA::input = input;
+}

@@ -16,11 +16,7 @@ DFA::DFA(const string &filename) : filename(filename) {
     for (auto it  = js["alphabet"].begin(); it != js["alphabet"].end() ; ++it) {
         string kar = *it;
 
-        char alpha[1];
-        strcpy(alpha, kar.c_str());
-
-        char alp = alpha[0];
-        alphabet.insert(alp);
+        alphabet.insert(kar);
     }
 
     // states
@@ -39,9 +35,8 @@ DFA::DFA(const string &filename) : filename(filename) {
 
     for (auto transitionA : transistionsA){
         string s1 = transitionA["input"];
-        char kar = s1[0];
         auto* trans = new TransitionDFA(retrieveState(transitionA["from"]), retrieveState(transitionA["to"]),
-                                              kar);
+                                              s1);
         transitions.push_back(trans);
     }
 }
@@ -52,14 +47,6 @@ const string &DFA::getFilename() const {
 
 void DFA::setFilename(const string &filename) {
     DFA::filename = filename;
-}
-
-const set<char> &DFA::getAlphabet() const {
-    return alphabet;
-}
-
-void DFA::setAlphabet(const set<char> &alphabet) {
-    DFA::alphabet = alphabet;
 }
 
 State *DFA::getStartState() const {
@@ -105,22 +92,30 @@ void DFA::print() {
     json dfa;
 
     for (auto & i : alphabet) {
-        string s1;
-        s1 = (char)i;
-        dfa["alphabet"] += s1;
+        dfa["alphabet"] += i;
     }
 
+    json stateJ;
     for (auto state: states) {
-        bool final = state->isFinal();
-        bool start = state->isStart();
-        dfa["states"] += {{"accepting", (bool)final},
-                          {"name",      state->getName()},
-                          {"starting",  (bool)start}};
+        stateJ["name"] = state->getName();
+        if (state->isFinal()){
+            stateJ["accepting"] = true;
+        }
+        else {
+            stateJ["accepting"] = false;
+        }
+        if (state->isStart()){
+            stateJ["starting"] = true;
+        }
+        else {
+            stateJ["starting"] = false;
+        }
+        dfa["states"] += stateJ;
     }
 
     for (auto transition : transitions){
         string s1;
-        s1 = (char)transition->getInput();
+        s1 = transition->getInput();
         dfa["transitions"] += {{"from", transition->getFrom()->getName()}, {"input", s1},{"to", transition->getTo()->getName()}};
     }
 
@@ -237,7 +232,67 @@ void DFA::RecursionStateFinderPD(State *state, DFA &dfa1, DFA &dfa2) {
 }
 
 void DFA::RecursionStateFinderPU(State *state, DFA &dfa1, DFA &dfa2) {
+    for (auto alpha : alphabet){
+        string name = state->getName();
+        string newName = "";
+        auto* newState = new State(newName, false, false);
+        auto newTrans = new TransitionDFA(state, nullptr, alpha);
 
+        // state 1
+        string s1(1, name[0]);
+        bool final1 = false;
+
+        for (auto trans : dfa1.getTransitions()) {
+            if (trans->getFrom()->getName() == s1 and trans->getInput() == alpha){
+                newName += trans->getTo()->getName();
+                if (trans->getTo()->isFinal()){
+                    final1 = true;
+                }
+            }
+        }
+
+        // state 2
+        string s2(1 , name[1]);
+        bool final2 = false;
+
+        for (auto trans : dfa2.getTransitions()) {
+            if (trans->getFrom()->getName() == s2 and trans->getInput() == alpha){
+                newName += trans->getTo()->getName();
+                if (trans->getTo()->isFinal()){
+                    final2 = true;
+                }
+            }
+        }
+
+        // Complete new state
+        newState->setName(newName);
+        if (final1 or final2){
+            newState->setFinal(final1);
+        }
+
+        // Check if state exist
+        State* tempState; // if state does exist --> transistion
+        bool exist = false;
+        for (auto stateE : states){
+            if (stateE->getName() == newName){
+                tempState = stateE;
+                exist = true;
+                delete newState;
+            }
+        }
+        if (!exist){
+            states.push_back(newState);
+            tempState = newState;
+        }
+
+        // Transition
+        newTrans->setTo(tempState);
+        transitions.push_back(newTrans);
+
+        if (!exist){
+            RecursionStateFinderPU(newState, dfa1, dfa2);
+        }
+    }
 }
 
 void DFA::reformatNamesP() {
@@ -254,4 +309,12 @@ void DFA::reformatNamesP() {
 
         state->setName(newName);
     }
+}
+
+const set<string> &DFA::getAlphabet() const {
+    return alphabet;
+}
+
+void DFA::setAlphabet(const set<string> &alphabet) {
+    DFA::alphabet = alphabet;
 }
