@@ -13,4 +13,4 @@ set(DFA
         TransitionDFA.cpp TransitionDFA.h DFA.cpp DFA.h)
 
 
-add_executable(DFA_test DFA_test.cpp ${DFA} ${json})
+add_executable(DFA_test DFA_product_test.cpp ${DFA} ${json})
