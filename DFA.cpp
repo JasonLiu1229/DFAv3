@@ -564,7 +564,7 @@ void DFA::reformatNamesTFA() {
         for (int i = 0; i < name.size(); ++i) {
             newName += name[i];
             if (i + 1 < name.size()){
-                newName += ',';
+                newName += ", ";
             }
         }
 
@@ -575,34 +575,6 @@ void DFA::reformatNamesTFA() {
 }
 
 void DFA::recursionTFAv2(int totalMarked) {
-    /*for (auto alpha : alphabet) {
-        for (auto mKoppel : newDFA.markedStates) {
-            // find new marked koppel
-            vector<State*> newMkoppelV;
-            set<State*> newMkoppelS;
-            for (auto mState : mKoppel){
-                newMkoppelV.push_back(mState);
-            }
-            for (auto trans : transitions) {
-                for (auto trans2 : transitions) {
-                    if (trans->getTo()->getName() == newMkoppelV[0]->getName() and trans2->getTo()->getName() == newMkoppelV[1]->getName() and trans->getInput() == alpha and trans2->getInput() == alpha){
-                        newMkoppelS = {newDFA.retrieveState(trans->getFrom()->getName()), newDFA.retrieveState(trans2->getFrom()->getName())};
-
-
-                        // mark new koppel
-                        newDFA.markSet(newMkoppelS);
-                    }
-                }
-            }
-
-        }
-    }
-    int newTotalMarked = newDFA.checkTotalMarked();
-
-    if (newTotalMarked > totalMarked){
-        recursionTFA(newTotalMarked, newDFA);
-    }*/
-
     for (auto alpha : alphabet) {
         for (auto mKoppel : markedStates){
             vector<State*> newMkoppelV;
@@ -643,16 +615,15 @@ void DFA::printTable() {
     sort(allStates.begin(), allStates.end());
 
     // print table
-    string printTable;
     for (int y = 1; y < allStates.size() + 1; ++y) {
         for (int x = 0; x < allStates.size(); ++x) {
             if (x == 0 and y != allStates.size()){
                 string s1(1, allStates[y]);
-                printTable += s1 + '\t';
+                cout << s1 + '\t';
             }
             else if (y == allStates.size() and x != allStates.size()-1){
                 string s1(1, allStates[x]);
-                printTable += '\t' + s1;
+                cout << '\t' + s1;
             }
             else {
                 if (x <= y){
@@ -663,11 +634,74 @@ void DFA::printTable() {
                     State* state2 = retrieveState(state2Name);
                     koppel.insert(state1);
                     koppel.insert(state2);
-                    printTable += table[koppel] + '\t';
+                    cout << table[koppel] + '\t';
                 }
             }
         }
-        printTable += '\n';
+        cout << '\n';
     }
-    cout << printTable << endl;
+}
+
+bool DFA::operator==(DFA &secondDFA) {
+    set<string> alphaInter;
+    set_intersection(alphabet.begin(), alphabet.end(), secondDFA.alphabet.begin(), secondDFA.alphabet.end(), inserter(alphaInter, alphaInter.begin()));
+    if (alphaInter.empty()){
+        return false;
+    }
+    else {
+        bool equivalent = true;
+        pair<State *, State *> koppel;
+
+        koppel.first = startState;
+        koppel.second = secondDFA.startState;
+
+        set<pair<State*, State*>> koppelsChecked;
+        koppelsChecked.insert(koppel);
+        return recursionCheckEquivalent(koppel, koppelsChecked, secondDFA);
+    }
+}
+
+bool DFA::recursionCheckEquivalent(pair<State *, State *> koppel, set<pair<State *, State *>> &markedKoppels, DFA &secondDFA) {
+    for (auto alpha : alphabet){
+        // new koppel
+        pair<State*, State*> newKoppel;
+        State* state1;
+        State* state2;
+
+        // check for state 1
+        bool final1;
+        for (auto trans : transitions){
+            if (trans->getFrom() == koppel.first and trans->getInput() == alpha){
+                state1 = trans->getTo();
+                final1 = state1->isFinal();
+                break;
+            }
+        }
+
+        // check for state 2
+        bool final2;
+        for (auto trans : secondDFA.transitions){
+            if (trans->getFrom() == koppel.second and trans->getInput() == alpha){
+                state2 = trans->getTo();
+                final2 = state2->isFinal();
+            }
+        }
+
+        // check for equivalent
+        if (final1 == final2){
+            newKoppel.first = state1;
+            newKoppel.second = state2;
+            int orgSize = markedKoppels.size();
+            markedKoppels.insert(newKoppel);
+            if (orgSize < markedKoppels.size()){
+                return recursionCheckEquivalent(newKoppel, markedKoppels, secondDFA);
+            }
+            else {
+                return true;
+            }
+        }
+        else {
+            return false;
+        }
+    }
 }

@@ -107,6 +107,10 @@ public:
     void reformatNamesTFA();
 
     void recursionTFAv2(int totalMarked);
+
+    bool operator == (DFA &secondDFA);
+
+    bool recursionCheckEquivalent(pair<State*, State*> koppel, set<pair<State*, State*>> &markedKoppels, DFA &secondDFA);
 };
 
 
