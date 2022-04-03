@@ -40,8 +40,19 @@ DFA::DFA(const string &filename) : filename(filename) {
         transitions.push_back(trans);
     }
 
+    // table
     createTable();
 
+    // mark final states
+    for (auto state : states) {
+        if (state->isFinal()){
+            markSingleState(state);
+        }
+    }
+
+    int totalMarked = checkTotalMarked();
+
+    recursionTFAv2(totalMarked);
 }
 
 const string &DFA::getFilename() const {
@@ -343,7 +354,22 @@ DFA DFA::minimize() {
     newDFA.createTable();
 
     // mark final states
+    for (auto state : newDFA.getStates()) {
+        if (state->isFinal()){
+            newDFA.markSingleState(state);
+        }
+    }
+
+    int totalMarked = newDFA.checkTotalMarked();
+
     // minimize
+    recursionTFA(totalMarked, newDFA);
+
+    // combine equivalent states
+    newDFA.convertTableTransitions(*this);
+
+    // convert name to right type of name {...}
+    newDFA.reformatNamesTFA();
 
     return newDFA;
 }
@@ -355,8 +381,20 @@ void DFA::recursionCheckReachable(DFA &dfa, State* state) {
         for (auto trans : transitions){
             if (trans->getFrom()->getName() == state->getName() and trans->getInput() == alpha){
                 auto* newState = new State(trans->getTo()->getName(), trans->getTo()->isFinal(), trans->getTo()->isStart());
-                dfa.states.push_back(newState);
-                recursionCheckReachable(dfa, newState);
+                bool append = true;
+                for (auto stateC : dfa.states){
+                    if (stateC->getName() == newState->getName()){
+                        append = false;
+                        break;
+                    }
+                }
+                if (append) {
+                    dfa.states.push_back(newState);
+                    recursionCheckReachable(dfa, newState);
+                }
+                else {
+                    delete newState;
+                }
             }
         }
     }
@@ -376,6 +414,260 @@ void DFA::createTable() {
     }
 }
 
-void DFA::recursionTFA(int totalMarked) {
+void DFA::recursionTFA(int totalMarked, DFA &newDFA) {
+    for (auto alpha : alphabet) {
+        for (auto mKoppel : newDFA.markedStates) {
+            // find new marked koppel
+            vector<State*> newMkoppelV;
+            set<State*> newMkoppelS;
+            for (auto mState : mKoppel){
+                newMkoppelV.push_back(mState);
+            }
+            for (auto trans : transitions) {
+                for (auto trans2 : transitions) {
+                    if (trans->getTo()->getName() == newMkoppelV[0]->getName() and trans2->getTo()->getName() == newMkoppelV[1]->getName() and trans->getInput() == alpha and trans2->getInput() == alpha){
+                        newMkoppelS = {newDFA.retrieveState(trans->getFrom()->getName()), newDFA.retrieveState(trans2->getFrom()->getName())};
 
+
+                        // mark new koppel
+                        newDFA.markSet(newMkoppelS);
+                    }
+                }
+            }
+
+        }
+    }
+    int newTotalMarked = newDFA.checkTotalMarked();
+
+    if (newTotalMarked > totalMarked){
+        recursionTFA(newTotalMarked, newDFA);
+    }
+}
+
+void DFA::markSet(const set<State*> &koppelSet) {
+    for (auto &koppel : table) {
+        if (koppelSet == koppel.first){
+            koppel.second = "X";
+            markedStates.insert(koppelSet);
+            break;
+        }
+    }
+}
+
+void DFA::markSingleState(State *state) {
+    for (auto &koppel : table) {
+        for (auto stateK : koppel.first) {
+            if (stateK == state){
+                koppel.second = "X";
+                markedStates.insert(koppel.first);
+            }
+        }
+    }
+}
+
+int DFA::checkTotalMarked() {
+    return markedStates.size();
+}
+
+void DFA::convertTableTransitions(DFA &dfaRef) {
+    // find all equivalent states
+    set<set<State*>> equivalentStates;
+    for (auto koppel : table) {
+        if (koppel.second == "-"){
+            equivalentStates.insert(koppel.first);
+        }
+    }
+
+    // combine koppels that have one common state
+    set<set<State*>> newStates;
+    bool equiFind = true;
+    while (equiFind) {
+        newStates = {};
+        for (auto koppel1: equivalentStates) {
+            for (auto koppel2: equivalentStates) {
+                if (koppel1 != koppel2) {
+                    set<State *> intersection;
+                    set_intersection(koppel1.begin(), koppel1.end(), koppel2.begin(), koppel2.end(),
+                                     inserter(intersection, intersection.begin()));
+                    if (!intersection.empty()) {
+                        set<State *> newState;
+                        set_union(koppel1.begin(), koppel1.end(), koppel2.begin(), koppel2.end(),
+                                  inserter(newState, newState.begin()));
+                        newStates.insert(newState);
+                    }
+                }
+            }
+        }
+        if (newStates.empty()) {
+            equiFind = false;
+        } else {
+            equivalentStates = newStates;
+        }
+    }
+    newStates = equivalentStates;
+    // combine koppels to one state
+    vector<vector<State*>> newStatesV;
+    newStatesV.reserve(newStates.size());
+
+    for (const auto& setStates : newStates){
+        vector<State*> vStates;
+        vStates.reserve(setStates.size());
+        for (auto state : setStates) {
+            vStates.push_back(state);
+        }
+        newStatesV.push_back(vStates);
+    }
+
+    vector<State*> vStatesSingle;
+    for (auto &vStates : newStatesV) {
+        // convert first state to combined state
+        for (int i = 1; i < vStates.size(); ++i) {
+            State* converterdState = vStates[0];
+            converterdState->setName(converterdState->getName() + vStates[i]->getName());
+            states.erase(remove(states.begin(), states.end(), vStates[i]), states.end());
+            delete vStates[i];
+        }
+
+        vStates.erase(vStates.begin() + 1, vStates.end());
+        vStatesSingle.push_back(vStates[0]);
+    }
+
+    // make transition
+    for (auto alphe : alphabet) {
+        for (auto trans: dfaRef.getTransitions()) {
+            for (auto &state: states) {
+                string nameState(1, state->getName()[0]);
+                if (trans->getFrom()->getName() == nameState and trans->getInput() == alphe){
+                    auto *transistion = new TransitionDFA();
+                    transistion->setFrom(state);
+                    transistion->setInput(alphe);
+                    string nameTo = trans->getTo()->getName();
+                    for (auto state : states){
+                        if (state->getName().find(nameTo) != string::npos){
+                            transistion->setTo(state);
+                            transitions.push_back(transistion);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void DFA::reformatNamesTFA() {
+    for (auto &state : states){
+        string name = state->getName();
+        sort(name.begin(), name.end());
+
+        string newName = "{";
+
+        for (int i = 0; i < name.size(); ++i) {
+            newName += name[i];
+            if (i + 1 < name.size()){
+                newName += ',';
+            }
+        }
+
+        newName += '}';
+
+        state->setName(newName);
+    }
+}
+
+void DFA::recursionTFAv2(int totalMarked) {
+    /*for (auto alpha : alphabet) {
+        for (auto mKoppel : newDFA.markedStates) {
+            // find new marked koppel
+            vector<State*> newMkoppelV;
+            set<State*> newMkoppelS;
+            for (auto mState : mKoppel){
+                newMkoppelV.push_back(mState);
+            }
+            for (auto trans : transitions) {
+                for (auto trans2 : transitions) {
+                    if (trans->getTo()->getName() == newMkoppelV[0]->getName() and trans2->getTo()->getName() == newMkoppelV[1]->getName() and trans->getInput() == alpha and trans2->getInput() == alpha){
+                        newMkoppelS = {newDFA.retrieveState(trans->getFrom()->getName()), newDFA.retrieveState(trans2->getFrom()->getName())};
+
+
+                        // mark new koppel
+                        newDFA.markSet(newMkoppelS);
+                    }
+                }
+            }
+
+        }
+    }
+    int newTotalMarked = newDFA.checkTotalMarked();
+
+    if (newTotalMarked > totalMarked){
+        recursionTFA(newTotalMarked, newDFA);
+    }*/
+
+    for (auto alpha : alphabet) {
+        for (auto mKoppel : markedStates){
+            vector<State*> newMkoppelV;
+            set<State*> newMkoppelS;
+            for (auto mState : mKoppel){
+                newMkoppelV.push_back(mState);
+            }
+            for (auto trans : transitions) {
+                for (auto trans2 : transitions) {
+                    if (trans->getTo()->getName() == newMkoppelV[0]->getName() and trans2->getTo()->getName() == newMkoppelV[1]->getName() and trans->getInput() == alpha and trans2->getInput() == alpha){
+                        newMkoppelS = {retrieveState(trans->getFrom()->getName()), retrieveState(trans2->getFrom()->getName())};
+
+
+                        // mark new koppel
+                        markSet(newMkoppelS);
+                    }
+                }
+            }
+
+        }
+    }
+    int newTotalMarked = checkTotalMarked();
+
+    if (newTotalMarked > totalMarked){
+        recursionTFAv2(newTotalMarked);
+    }
+}
+
+void DFA::printTable() {
+    string allStates;
+
+    // get names of all states
+    for (auto state : states){
+        allStates += state->getName();
+    }
+
+    // sort names
+    sort(allStates.begin(), allStates.end());
+
+    // print table
+    string printTable;
+    for (int y = 1; y < allStates.size() + 1; ++y) {
+        for (int x = 0; x < allStates.size(); ++x) {
+            if (x == 0 and y != allStates.size()){
+                string s1(1, allStates[y]);
+                printTable += s1 + '\t';
+            }
+            else if (y == allStates.size() and x != allStates.size()-1){
+                string s1(1, allStates[x]);
+                printTable += '\t' + s1;
+            }
+            else {
+                if (x <= y){
+                    set<State*> koppel;
+                    string state1Name(1, allStates[x-1]);
+                    string state2Name(1, allStates[y]);
+                    State* state1 = retrieveState(state1Name);
+                    State* state2 = retrieveState(state2Name);
+                    koppel.insert(state1);
+                    koppel.insert(state2);
+                    printTable += table[koppel] + '\t';
+                }
+            }
+        }
+        printTable += '\n';
+    }
+    cout << printTable << endl;
 }

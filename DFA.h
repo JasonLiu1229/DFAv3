@@ -41,6 +41,10 @@ class DFA {
 
     // table
     map<set<State*>, string> table;
+
+    set<set<State*>> markedStates;
+
+    set<State*> startingKoppel;
 public:
     DFA(const string &filename);
 
@@ -90,7 +94,19 @@ public:
 
     void createTable();
 
-    void recursionTFA(int totalMarked);
+    void recursionTFA(int totalMarked, DFA &newDFA);
+
+    void markSet(const set<State*> &koppelSet);
+
+    void markSingleState(State* state);
+
+    int checkTotalMarked();
+
+    void convertTableTransitions(DFA &dfaRef);
+
+    void reformatNamesTFA();
+
+    void recursionTFAv2(int totalMarked);
 };
 
 
