@@ -20,6 +20,7 @@ using namespace std;
 class State;
 class TransitionDFA;
 
+typedef map<set<State*>, string> Table;
 class DFA {
     // filename
     string filename;
@@ -40,7 +41,7 @@ class DFA {
     const string type = "DFA";
 
     // table
-    map<set<State*>, string> table;
+    Table table;
 
     set<set<State*>> markedStates;
 
@@ -111,6 +112,16 @@ public:
     bool operator == (DFA &secondDFA);
 
     bool recursionCheckEquivalent(pair<State*, State*> koppel, set<pair<State*, State*>> &markedKoppels, DFA &secondDFA);
+
+    Table createTablev2(DFA &secondDFA);
+
+    void printTablev2(DFA &secondDFA);
+
+    void recursionTFAv3(int totalMarked, DFA &secondDFA, Table& tableRef);
+
+    static int checkTotalMarkedv2(const Table &tableRef);
+
+    State* retrieveStatev2(const vector<State*> &vectorOfStates, const string &stateName);
 };
 
 

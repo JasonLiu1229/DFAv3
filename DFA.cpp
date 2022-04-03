@@ -657,6 +657,9 @@ bool DFA::operator==(DFA &secondDFA) {
 
         set<pair<State*, State*>> koppelsChecked;
         koppelsChecked.insert(koppel);
+
+        printTablev2(secondDFA);
+
         return recursionCheckEquivalent(koppel, koppelsChecked, secondDFA);
     }
 }
@@ -705,3 +708,216 @@ bool DFA::recursionCheckEquivalent(pair<State *, State *> koppel, set<pair<State
         }
     }
 }
+
+Table DFA::createTablev2(DFA &secondDFA) {
+    Table newTable;
+
+    // combine both dfa's
+    for (auto state1 : states){
+        for (auto state2 : secondDFA.states){
+            set<State*> koppel;
+            koppel.insert(state1);
+            koppel.insert(state2);
+
+            newTable[koppel] = "-";
+        }
+    }
+
+    // table of dfa1
+    for (auto state1 : states){
+        for (auto state2 : states){
+            if (state1 != state2){
+                set<State*> koppel;
+                koppel.insert(state1);
+                koppel.insert(state2);
+
+                newTable[koppel] = "-";
+            }
+        }
+    }
+
+    // table of seconf dfa
+    for (auto state1 : secondDFA.states){
+        for (auto state2 : secondDFA.states){
+            if (state1 != state2){
+                set<State*> koppel;
+                koppel.insert(state1);
+                koppel.insert(state2);
+
+                newTable[koppel] = "-";
+            }
+        }
+    }
+
+    return newTable;
+}
+
+void DFA::printTablev2(DFA &secondDFA) {
+    // create table combined of two dfa's
+    Table newTable = createTablev2(secondDFA);
+
+    // mark every finalstate
+    for (auto &koppel : newTable){
+        for (auto state : koppel.first){
+            if (state->isFinal()){
+                koppel.second = "X";
+                break;
+            }
+        }
+    }
+
+    // find every non-equivalent pair with recursion
+    int totalMarked = checkTotalMarkedv2(newTable);
+    recursionTFAv3(totalMarked, secondDFA, newTable);
+
+    vector<State*> allStatesV;
+    string allStates;
+
+    string stateNames1;
+    string stateNames2;
+
+    // dfa1 names
+    for (const auto &state : states){
+        stateNames1 += state->getName();
+        allStatesV.push_back(state);
+    }
+
+    sort(stateNames1.begin(), stateNames1.end());
+
+    // dfa2 names
+    for (const auto &state : secondDFA.states){
+        stateNames2 += state->getName();
+        allStatesV.push_back(state);
+    }
+
+    sort(stateNames2.begin(), stateNames2.end());
+
+    allStates = stateNames1 + stateNames2;
+
+    // print table
+    for (int y = 1; y < allStates.size() + 1; ++y) {
+        for (int x = 0; x < allStates.size(); ++x) {
+            if (x == 0 and y != allStates.size()){
+                string s1(1, allStates[y]);
+                cout << s1 + '\t';
+            }
+            else if (y == allStates.size() and x != allStates.size()-1){
+                string s1(1, allStates[x]);
+                cout << '\t' + s1;
+            }
+            else {
+                if (x <= y){
+                    set<State*> koppel;
+                    string state1Name(1, allStates[x-1]);
+                    string state2Name(1, allStates[y]);
+                    State* state1 = retrieveStatev2(allStatesV, state1Name);
+                    State* state2 = retrieveStatev2(allStatesV, state2Name);
+                    koppel.insert(state1);
+                    koppel.insert(state2);
+                    cout << newTable[koppel] + '\t';
+                }
+                else {
+                    break;
+                }
+            }
+        }
+        cout << endl;
+    }
+}
+
+void DFA::recursionTFAv3(int totalMarked, DFA &secondDFA, Table &tableRef) {
+    // find markedStates
+    set<set<State*>> newMarkedStates;
+
+    for (const auto& koppel : tableRef){
+        if (koppel.second == "X"){
+            newMarkedStates.insert(koppel.first);
+        }
+    }
+
+    for (const auto& alpha : alphabet) {
+        for (const auto& mKoppel : newMarkedStates){
+            vector<State*> newMkoppelV;
+            set<State*> newMkoppelS;
+            newMkoppelV.reserve(mKoppel.size());
+            for (auto mState : mKoppel){
+                newMkoppelV.push_back(mState);
+            }
+            // combined koppels
+            for (auto trans1 : transitions){
+                for (auto trans2 : secondDFA.transitions){
+                    if (trans1->getTo()->getName() == newMkoppelV[0]->getName() and trans2->getTo()->getName() == newMkoppelV[1]->getName() and trans1->getInput() == alpha and trans2->getInput() == alpha){
+                        newMkoppelS = {retrieveState(trans1->getFrom()->getName()), secondDFA.retrieveState(trans2->getFrom()->getName())};
+
+
+                        // mark new koppel
+                        for (auto &koppel : tableRef){
+                            if (koppel.first == newMkoppelS){
+                                koppel.second = "X";
+                            }
+                        }
+                    }
+                }
+            }
+            // koppel of dfa1
+            for (auto trans1 : transitions){
+                for (auto trans2 : transitions){
+                    if (trans1->getTo()->getName() == newMkoppelV[0]->getName() and trans2->getTo()->getName() == newMkoppelV[1]->getName() and trans1->getInput() == alpha and trans2->getInput() == alpha){
+                        newMkoppelS = {retrieveState(trans1->getFrom()->getName()), retrieveState(trans2->getFrom()->getName())};
+
+
+                        // mark new koppel
+                        for (auto &koppel : tableRef){
+                            if (koppel.first == newMkoppelS){
+                                koppel.second = "X";
+                            }
+                        }
+                    }
+                }
+            }
+
+            // koppel of dfa2
+            for (auto trans1 : secondDFA.transitions){
+                for (auto trans2 : secondDFA.transitions){
+                    if (trans1->getTo()->getName() == newMkoppelV[0]->getName() and trans2->getTo()->getName() == newMkoppelV[1]->getName() and trans1->getInput() == alpha and trans2->getInput() == alpha){
+                        newMkoppelS = {secondDFA.retrieveState(trans1->getFrom()->getName()), secondDFA.retrieveState(trans2->getFrom()->getName())};
+
+
+                        // mark new koppel
+                        for (auto &koppel : tableRef){
+                            if (koppel.first == newMkoppelS){
+                                koppel.second = "X";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    int newTotalMarked = checkTotalMarkedv2(tableRef);
+
+    if (newTotalMarked > totalMarked) {
+        recursionTFAv3(newTotalMarked, secondDFA, tableRef);
+    }
+}
+
+int DFA::checkTotalMarkedv2(const Table &tableRef) {
+    int i = 0;
+    for (auto koppel : tableRef){
+        if(koppel.second == "X"){
+            i++;
+        }
+    }
+    return i;
+}
+
+State *DFA::retrieveStatev2(const vector<State *> &vectorOfStates, const string &stateName) {
+    for (const auto &state : vectorOfStates){
+        if (state->getName() == stateName){
+            return state;
+        }
+    }
+    return nullptr;
+}
+
+

@@ -1,0 +1,56 @@
+{
+  "type": "DFA",
+  "alphabet": [
+    "a",
+    "e"
+  ],
+  "states": [
+    {
+      "name": "A",
+      "starting": true,
+      "accepting": false
+    },
+    {
+      "name": "B",
+      "starting": false,
+      "accepting": false
+    },
+    {
+      "name": "C",
+      "starting": false,
+      "accepting": true
+    }
+  ],
+  "transitions": [
+    {
+      "from": "A",
+      "to": "B",
+      "input": "e"
+    },
+    {
+      "from": "B",
+      "to": "B",
+      "input": "a"
+    },
+    {
+      "from": "B",
+      "to": "C",
+      "input": "e"
+    },
+    {
+      "from": "A",
+      "to": "C",
+      "input": "a"
+    },
+    {
+      "from": "C",
+      "to": "A",
+      "input": "e"
+    },
+    {
+      "from": "C",
+      "to": "C",
+      "input": "a"
+    }
+  ]
+}
