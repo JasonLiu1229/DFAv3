@@ -758,11 +758,15 @@ void DFA::printTablev2(DFA &secondDFA) {
 
     // mark every finalstate
     for (auto &koppel : newTable){
+        vector<State*> koppelV;
         for (auto state : koppel.first){
-            if (state->isFinal()){
-                koppel.second = "X";
-                break;
-            }
+            koppelV.push_back(state);
+        }
+        if(!koppelV[0]->isFinal() and koppelV[1]->isFinal()){
+            koppel.second = "X";
+        }
+        else if (koppelV[0]->isFinal() and !koppelV[1]->isFinal()){
+            koppel.second = "X";
         }
     }
 
