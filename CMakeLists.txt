@@ -12,7 +12,16 @@ set(DFA
         State.cpp State.h
         TransitionDFA.cpp TransitionDFA.h DFA.cpp DFA.h TFA_test.cpp)
 
+set(REGEX
+        RE.cpp RE.h)
+
+set(ENFA
+        ENFA.cpp ENFA.h
+        TransitionNFA.cpp TransitionNFA.h)
+
 
 add_executable(DFAP_test DFA_product_test.cpp ${DFA} ${json})
 
 add_executable(TFA_test TFA_test.cpp ${DFA} ${json})
+
+add_executable(RE_ENFA_test RE_ENFA_test.cpp ${DFA} ${json} ${REGEX} ${ENFA})
