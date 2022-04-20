@@ -18,7 +18,7 @@ using json = nlohmann::json;
 using namespace std;
 
 class State;
-class TransitionDFA;
+class TransitionNFA;
 
 class ENFA {
     // filename
@@ -34,10 +34,46 @@ class ENFA {
     vector<State*> states;
 
     // all transitions
-    vector<TransitionDFA*> transitions;
+    vector<TransitionNFA*> transitions;
 
     // type
-    const string type = "DFA";
+    const string type = "ENFA";
+
+public:
+    // constructors
+    ENFA();
+
+    ENFA(const string &filename);
+
+    // getter setters
+    const set<string> &getAlphabet() const;
+
+    void setAlphabet(const set<string> &alphabet);
+
+    State *getStartState() const;
+
+    void setStartState(State *startState);
+
+    const vector<State *> &getStates() const;
+
+    void setStates(const vector<State *> &states);
+
+    const vector<TransitionNFA *> &getTransitions() const;
+
+    void setTransitions(const vector<TransitionNFA *> &transitions);
+
+    const string &getType() const;
+
+    void addState(State* state);
+
+    // other functions
+    void printStats();
+
+    bool accepts(const string &inputString);
+
+    // destructors
+    virtual ~ENFA();
+
 };
 
 

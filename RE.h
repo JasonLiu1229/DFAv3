@@ -5,6 +5,7 @@
 #ifndef DFAV3_RE_H
 #define DFAV3_RE_H
 #include <string>
+#include "ENFA.h"
 
 using namespace std;
 
@@ -16,13 +17,23 @@ class RE {
 public:
     RE();
 
-    RE(const string &regex, const string &typeS);
+    RE(const string &regex, const char &typeS);
 
     const string &getRegex() const;
 
     void setRegex(const string &regex);
 
     automataType getType() const;
+
+    ENFA toENFA();
+
+    void recursionToENFAFinder(ENFA &enfa, const string& regex);
+
+    ENFA createConcatanation(const string &input1, const string &input2);
+
+    ENFA createKleenStar(const string &input);
+
+    ENFA createUnion(const string &input1, const string &input2);
 
     virtual ~RE();
 };
